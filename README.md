@@ -1,1 +1,1 @@
-# jubo_hr
+# Jubo HR System 整理器
