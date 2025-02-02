@@ -130,138 +130,108 @@
     <script>
         let jsonData = [];
 
-        function previewExcel() {
-            const fileInput = document.getElementById('fileInput');
-            if (!fileInput.files.length) {
-                alert('Please select a file.');
-                return;
-            }
+function previewExcel() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files.length) {
+        alert('Please select a file.');
+        return;
+    }
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                jsonData = XLSX.utils.sheet_to_json(worksheet);
+    reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                console.log('Excel Data:', jsonData); 
+        console.log('Excel Data:', jsonData);
 
-                jsonData = jsonData.filter(row => row['名稱'] && row['名稱'] !== '無');
-                previewData(jsonData);
-            };
+        previewData(jsonData);
+    };
 
-            reader.readAsArrayBuffer(file);
-        }
+    reader.readAsArrayBuffer(file);
+}
 
-        function previewData(data) {
-            const previewTable = document.getElementById('previewTable');
-            previewTable.innerHTML = '';
+function previewData(data) {
+    const previewTable = document.getElementById('previewTable');
+    previewTable.innerHTML = '';
 
-            if (data.length > 0) {
-                const headerRow = document.createElement('tr');
-                Object.keys(data[0]).forEach(key => {
-                    const th = document.createElement('th');
-                    th.innerText = key;
-                    headerRow.appendChild(th);
-                });
-                previewTable.appendChild(headerRow);
+    if (data.length > 0) {
+        const headerRow = document.createElement('tr');
+        Object.keys(data[0]).forEach(key => {
+            const th = document.createElement('th');
+            th.innerText = key;
+            headerRow.appendChild(th);
+        });
+        previewTable.appendChild(headerRow);
 
-                data.forEach(row => {
-                    const tr = document.createElement('tr');
-                    Object.values(row).forEach(value => {
-                        const td = document.createElement('td');
-                        td.innerText = value;
-                        tr.appendChild(td);
-                    });
-                    previewTable.appendChild(tr);
-                });
-            }
-        }
-
-        function processData() {
-            const recommendations = {};
-
-            jsonData.forEach(row => {
-                const currentName = row['名稱'];
-                if (currentName && currentName !== '無') {
-                    console.log('Processing:', currentName);
-
-                    [
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3',
-                        'Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)'
-                    ].forEach(col => {
-                        if (row[col]) {
-                            const recommender = row[col];
-                            if (recommender !== '無') {
-                                if (!recommendations[recommender]) {
-                                    recommendations[recommender] = [];
-                                }
-                                recommendations[recommender].push(currentName);
-                            }
-                        }
-                    });
-                }
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            Object.values(row).forEach(value => {
+                const td = document.createElement('td');
+                td.innerText = value;
+                tr.appendChild(td);
             });
+            previewTable.appendChild(tr);
+        });
+    }
+}
 
-            displayResult(recommendations);
-        }
+function processData() {
+    const processedData = jsonData.map(row => {
+        const email = row['電子郵件'];
+        const name = row['名稱'];
+        const recommended = [
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋'],
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2'],
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3'],
+            row['Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)'],
+            row['Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)'],
+            row['Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)']
+        ].filter(Boolean).join('、');
 
-        function displayResult(recommendations) {
-            const table = document.getElementById('outputTable');
-            table.innerHTML = '<tr><th>填寫人</th><th>填寫誰的</th></tr>';
+        return { '電子郵件': email, '名稱': name, '填寫的推薦人': recommended };
+    });
 
-            for (const recommender in recommendations) {
-                const recommended = recommendations[recommender].join('、');
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${recommender}</td><td>${recommended}</td>`;
-                table.appendChild(tr);
-            }
-        }
+    displayResult(processedData);
+}
 
-        function downloadExcel() {
-            const recommendations = {};
+function displayResult(data) {
+    const table = document.getElementById('outputTable');
+    table.innerHTML = '<tr><th>電子郵件</th><th>名稱</th><th>填寫的推薦人</th></tr>';
 
-            jsonData.forEach(row => {
-                const currentName = row['名稱'];
-                if (currentName && currentName !== '無') {
-                    [
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3',
-                        'Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)'
-                    ].forEach(col => {
-                        if (row[col]) {
-                            const recommender = row[col];
-                            if (recommender !== '無') {
-                                if (!recommendations[recommender]) {
-                                    recommendations[recommender] = [];
-                                }
-                                recommendations[recommender].push(currentName);
-                            }
-                        }
-                    });
-                }
-            });
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row['電子郵件']}</td><td>${row['名稱']}</td><td>${row['填寫的推薦人']}</td>`;
+        table.appendChild(tr);
+    });
+}
 
-            const resultData = [];
-            for (const recommender in recommendations) {
-                resultData.push({ '填寫人': recommender, '填寫誰的': recommendations[recommender].join('、') });
-            }
+function downloadExcel() {
+    const processedData = jsonData.map(row => {
+        const email = row['電子郵件'];
+        const name = row['名稱'];
+        const recommended = [
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋'],
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2'],
+            row['You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3'],
+            row['Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)'],
+            row['Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)'],
+            row['Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)']
+        ].filter(Boolean).join('、');
 
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(resultData);
-            XLSX.utils.book_append_sheet(wb, ws, 'Processed Data');
-            XLSX.writeFile(wb, '推薦回饋表.xlsx');
-        }
+        return { '電子郵件': email, '名稱': name, '填寫的推薦人': recommended };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(processedData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Processed Data');
+    XLSX.writeFile(wb, '推薦回饋表.xlsx');
+}
+
     </script>
 </body>
 </html>
