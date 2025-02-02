@@ -3,7 +3,7 @@
 
 ## 目前進度(Checkpoints)
 1. Phase 1 - 推薦回饋表整理 V
-2. Phase 1.5 - 反向推薦回饋表 (主管調整後)
+2. Phase 1.5 - 反向推薦回饋表 (主管調整後) V
 3. Phase 2 - 個人回饋表 (with Result)
 4. 額外功能: 分類By Department (可以參考目前在 Deloitte 的 Missing Time 分檔)
 ## Jubo 簡易360度 Evaluation 流程
