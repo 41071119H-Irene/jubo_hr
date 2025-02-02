@@ -128,140 +128,117 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
     
     <script>
-        let jsonData = [];
+    let jsonData = [];
 
-        function previewExcel() {
-            const fileInput = document.getElementById('fileInput');
-            if (!fileInput.files.length) {
-                alert('Please select a file.');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-                console.log('Excel Data:', jsonData); 
-
-                jsonData = jsonData.filter(row => row['名稱'] && row['名稱'] !== '無');
-                previewData(jsonData);
-            };
-
-            reader.readAsArrayBuffer(file);
+    function previewExcel() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files.length) {
+            alert('請選擇 Excel 檔案');
+            return;
         }
 
-        function previewData(data) {
-            const previewTable = document.getElementById('previewTable');
-            previewTable.innerHTML = '';
+        const file = fileInput.files[0];
+        const reader = new FileReader();
 
-            if (data.length > 0) {
-                const headerRow = document.createElement('tr');
-                Object.keys(data[0]).forEach(key => {
-                    const th = document.createElement('th');
-                    th.innerText = key;
-                    headerRow.appendChild(th);
-                });
-                previewTable.appendChild(headerRow);
+        reader.onload = function(event) {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                data.forEach(row => {
-                    const tr = document.createElement('tr');
-                    Object.values(row).forEach(value => {
-                        const td = document.createElement('td');
-                        td.innerText = value;
-                        tr.appendChild(td);
-                    });
-                    previewTable.appendChild(tr);
-                });
-            }
-        }
+            console.log('Excel Data:', jsonData);
+            previewData(jsonData);
+        };
 
-        function processData() {
-            const recommendations = {};
+        reader.readAsArrayBuffer(file);
+    }
 
-            jsonData.forEach(row => {
-                const currentName = row['名稱'];
-                if (currentName && currentName !== '無') {
-                    console.log('Processing:', currentName);
+    function previewData(data) {
+        const previewTable = document.getElementById('previewTable');
+        previewTable.innerHTML = '';
 
-                    [
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3',
-                        'Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)'
-                    ].forEach(col => {
-                        if (row[col]) {
-                            const recommender = row[col];
-                            if (recommender !== '無') {
-                                if (!recommendations[recommender]) {
-                                    recommendations[recommender] = [];
-                                }
-                                recommendations[recommender].push(currentName);
-                            }
-                        }
-                    });
-                }
+        if (data.length > 0) {
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach(key => {
+                const th = document.createElement('th');
+                th.innerText = key;
+                headerRow.appendChild(th);
             });
+            previewTable.appendChild(headerRow);
 
-            displayResult(recommendations);
-        }
-
-        function displayResult(recommendations) {
-            const table = document.getElementById('outputTable');
-            table.innerHTML = '<tr><th>填寫人</th><th>填寫誰的</th></tr>';
-
-            for (const recommender in recommendations) {
-                const recommended = recommendations[recommender].join('、');
+            data.forEach(row => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${recommender}</td><td>${recommended}</td>`;
-                table.appendChild(tr);
-            }
-        }
-
-        function downloadExcel() {
-            const recommendations = {};
-
-            jsonData.forEach(row => {
-                const currentName = row['名稱'];
-                if (currentName && currentName !== '無') {
-                    [
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋2',
-                        'You must invite 3 colleagues from your same department. 您同部門的同事，請邀請3位給您回饋3',
-                        'Invite at least 1 colleague from a different department. 您不同部門的同事，邀請1位給您回饋 (必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3 (optional). 您不同部門的同事，邀請第2位給您回饋 (非必填)',
-                        'Invite at least 1 colleague from a different department, up to a maximum of 3(optional). 您不同部門的同事，邀請第3位給您回饋 (非必填)'
-                    ].forEach(col => {
-                        if (row[col]) {
-                            const recommender = row[col];
-                            if (recommender !== '無') {
-                                if (!recommendations[recommender]) {
-                                    recommendations[recommender] = [];
-                                }
-                                recommendations[recommender].push(currentName);
-                            }
-                        }
-                    });
-                }
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.innerText = value;
+                    tr.appendChild(td);
+                });
+                previewTable.appendChild(tr);
             });
-
-            const resultData = [];
-            for (const recommender in recommendations) {
-                resultData.push({ '填寫人': recommender, '填寫誰的': recommendations[recommender].join('、') });
-            }
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(resultData);
-            XLSX.utils.book_append_sheet(wb, ws, 'Processed Data');
-            XLSX.writeFile(wb, '推薦回饋表.xlsx');
         }
+    }
+
+    function processData() {
+        let recommendationMap = {};
+
+        jsonData.forEach(row => {
+            const name = row['名稱'];
+            const recommendedList = (row['填寫的推薦人'] || "").split("、");
+
+            recommendedList.forEach(recommender => {
+                if (!recommendationMap[recommender]) {
+                    recommendationMap[recommender] = new Set();
+                }
+                recommendationMap[recommender].add(name);
+            });
+        });
+
+        const processedData = Object.entries(recommendationMap).map(([recommender, names]) => ({
+            '名稱': recommender,
+            '回饋對象': Array.from(names).join("、")
+        }));
+
+        displayResult(processedData);
+    }
+
+    function displayResult(data) {
+        const table = document.getElementById('outputTable');
+        table.innerHTML = '<tr><th>名稱</th><th>回饋對象</th></tr>';
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${row['名稱']}</td><td>${row['回饋對象']}</td>`;
+            table.appendChild(tr);
+        });
+    }
+
+    function downloadExcel() {
+        let recommendationMap = {};
+
+        jsonData.forEach(row => {
+            const name = row['名稱'];
+            const recommendedList = (row['填寫的推薦人'] || "").split("、");
+
+            recommendedList.forEach(recommender => {
+                if (!recommendationMap[recommender]) {
+                    recommendationMap[recommender] = new Set();
+                }
+                recommendationMap[recommender].add(name);
+            });
+        });
+
+        const processedData = Object.entries(recommendationMap).map(([recommender, names]) => ({
+            '名稱': recommender,
+            '回饋對象': Array.from(names).join("、")
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(processedData);
+        XLSX.utils.book_append_sheet(wb, ws, '反向推薦回饋表');
+        XLSX.writeFile(wb, 'Phase 1.5_反向推薦回饋表.xlsx');
+    }
+
     </script>
 </body>
 </html>
